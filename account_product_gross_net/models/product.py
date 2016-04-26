@@ -3,7 +3,7 @@
 from openerp import SUPERUSER_ID
 from openerp import models, fields, api
 from openerp.tools.float_utils import float_round
-import addons.decimal_precision as dp
+import openerp.addons.decimal_precision as dp
 import logging
 
 _logger = logging.getLogger(__name__)
@@ -88,13 +88,16 @@ class product_attribute_value(models.Model):
     @api.multi
     def write(self, vals):
         if self.env.context.get('active_id', False):
-            price_att = self.env['product.attribute.price'].search([('product_tmpl_id', '=', self.env.context['active_id']), ('value_id', '=', self.id)])
+            price_att = self.env['product.attribute.price'].search(
+                [('product_tmpl_id', '=', self.env.context['active_id']), ('value_id', '=', self.id)])
             if price_att:
                 template = price_att.product_tmpl_id
                 if 'price_extra' in vals:
-                    vals['lst_price_brut'] = template.lst_price_brut + vals['price_extra'] * template.brut_net_factor
+                    vals['lst_price_brut'] = template.lst_price_brut + \
+                        vals['price_extra'] * template.brut_net_factor
                 elif 'lst_price_brut' in vals:
-                    vals['price_extra'] = (vals['lst_price_brut'] - template.lst_price_brut) / template.brut_net_factor
+                    vals['price_extra'] = (vals['lst_price_brut'] -
+                                           template.lst_price_brut) / template.brut_net_factor
         elif 'lst_price_brut' in vals:
             del vals['lst_price_brut']
         return super(product_attribute_value, self).write(vals)
@@ -111,5 +114,6 @@ class product_attribute_price(models.Model):
     @api.model
     def create(self, vals):
         template = self.product_tmpl_id.browse(vals['product_tmpl_id'])
-        vals['lst_price_brut'] = template.lst_price_brut + float(vals['price_extra']) * template.brut_net_factor
+        vals['lst_price_brut'] = template.lst_price_brut + \
+            float(vals['price_extra']) * template.brut_net_factor
         return super(product_attribute_price, self).create(vals)
